@@ -10,7 +10,7 @@ jobs:
       - uses: azu/rss-to-twitter@v2
         with:
           RSS_URL: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml"
-          TWEET_TEMPLATE: 'テストポスト:"%title%" "%desc%" %url%'
+          TWEET_TEMPLATE: '%title% %desc%'
           UPDATE_WITHIN_MINUTES: 4320 # post items that are published within 15 minutes
           TWITTER_APIKEY: ${{ secrets.TWITTER_APIKEY }}
           TWITTER_APIKEY_SECRET: ${{ secrets.TWITTER_APIKEY_SECRET }}
