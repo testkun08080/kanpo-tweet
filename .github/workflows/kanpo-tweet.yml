@@ -35,7 +35,7 @@ jobs:
       - name: Check RSS Update
         id: check
         run: |
-          python scripts/check_rss.py "${{ github.event.inputs.rss_url }}" "${{ github.event.inputs.minutes }}"
+          python scripts/check_rss.py "${{ inputs.rss_url }}" "${{ inputs.minutes }}"
 
       - name: Show Results
         run: |
@@ -50,9 +50,9 @@ jobs:
     steps:
       - uses: azu/rss-to-twitter@v2
         with:
-          RSS_URL: ${{ github.event.inputs.rss_url }}
+          RSS_URL: ${{ inputs.rss_url }}
           TWEET_TEMPLATE: "%desc%"
-          UPDATE_WITHIN_MINUTES: ${{ github.event.inputs.minutes }}
+          UPDATE_WITHIN_MINUTES: ${{ inputs.minutes }}
           TWITTER_APIKEY: ${{ secrets.TWITTER_APIKEY }}
           TWITTER_APIKEY_SECRET: ${{ secrets.TWITTER_APIKEY_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
