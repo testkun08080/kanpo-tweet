@@ -34,8 +34,13 @@ jobs:
 
       - name: Check RSS Update
         id: check
+        env:
+          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
+          MINUTES: ${{ inputs.minutes || '720' }}
         run: |
-          python scripts/check_rss.py "${{ inputs.rss_url }}" "${{ inputs.minutes }}"
+          echo "▶️ RSS_URL: $RSS_URL"
+          echo "⏱ MINUTES: $MINUTES"
+          python scripts/check_rss.py "$RSS_URL" "$MINUTES"
 
       - name: Show Results
         run: |
@@ -50,9 +55,9 @@ jobs:
     steps:
       - uses: azu/rss-to-twitter@v2
         with:
-          RSS_URL: ${{ inputs.rss_url }}
+          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
           TWEET_TEMPLATE: "%desc%"
-          UPDATE_WITHIN_MINUTES: ${{ inputs.minutes }}
+          UPDATE_WITHIN_MINUTES: ${{ inputs.minutes || '720' }}
           TWITTER_APIKEY: ${{ secrets.TWITTER_APIKEY }}
           TWITTER_APIKEY_SECRET: ${{ secrets.TWITTER_APIKEY_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
