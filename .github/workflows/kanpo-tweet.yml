@@ -13,7 +13,7 @@ on:
         default: "720" # 12時間
 
   schedule:
-    - cron: "40 23 * * *" # JST 8:40
+    - cron: "40 23 * * 1-5" # 月曜〜金曜の JST 8:40（UTC 23:40）
 
 jobs:
   check_rss:
