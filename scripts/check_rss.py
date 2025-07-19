@@ -1,20 +1,6 @@
-"""
-RSSを確認して、引数を元に更新がされているのかどうかとアイテムの内容を返します。
-
-以下サンプル
-{
-  "updated": true,
-  "entries": [
-    {
-      "title": "令和7年7月15日（本紙　第1507号）",
-      "link": "https://www.kanpo.go.jp/20250715/20250715h01507/pdf/20250715h01507full00010032.pdf",
-      "published": "2025-07-11 14:58:50 GMT"
-    }
-}
-"""
-
 import sys
 import feedparser
+import time
 from datetime import datetime, timedelta, timezone
 import os
 import logging
@@ -26,8 +12,7 @@ def main():
 
     rss_url = sys.argv[1]
     minutes = int(sys.argv[2])
-    now = datetime.now(timezone.utc)
-    window = now - timedelta(minutes=minutes)
+    window = datetime.now(timezone.utc) - timedelta(minutes=minutes)
 
     logging.info(f"RSS URL: {rss_url}")
     logging.info(f"チェック時間幅: {minutes}分前 = {window.isoformat()}以降")
@@ -37,10 +22,16 @@ def main():
 
     for entry in feed.entries:
         if hasattr(entry, "published_parsed"):
+            logging.info(f"公開日時: {entry.published}")
+            pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+        else:
+            continue  # pubDateがないitemはスキップ
+
+        if pub_dt >= window:
             updated_entries.append({
                 "title": entry.get("title", ""),
                 "link": entry.get("link", ""),
-                "published": entry.get("published", ""),
+                "pubDate": pub_dt.strftime("%Y-%m-%d %H:%M:%S, GMT"),
             })
 
     updated = bool(updated_entries)
