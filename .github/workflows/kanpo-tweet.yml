@@ -13,7 +13,7 @@ on:
         default: "720" # 12時間
 
   schedule:
-    - cron: "40 23 * * 1-5" # 月曜〜金曜の JST 8:40（UTC 23:40）
+    - cron: "32 23 * * 1-5" # 月曜〜金曜の JST 8:32 (遅延を考慮して 32分に設定)
 
 jobs:
   check_rss:
