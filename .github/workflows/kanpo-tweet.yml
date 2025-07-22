@@ -71,7 +71,7 @@ jobs:
       - uses: noweh/post-tweet-v2-action@v1.0
         with:
           message: "今日の現時刻では官報の更新が見つかりません。\nhttps://www.kanpo.go.jp/"
-          consumer-key: ${{ secrets.TWITTER_APIKEY_SECRET }}
+          consumer-key: ${{ secrets.TWITTER_APIKEY }}
           consumer-secret: ${{ secrets.TWITTER_APIKEY_SECRET }}
           access-token: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           access-token-secret: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
