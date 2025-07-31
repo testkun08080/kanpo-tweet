@@ -14,7 +14,6 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     If in_reply_to_tweet_id is given, posts as a reply.
     Returns tweet id or None if failed.
     """
-    # OAuth 1.0a User Context認証（Twitter/X公式が要求）
     api_key = os.environ.get("X_API_KEY")
     api_secret = os.environ.get("X_API_SECRET")
     access_token = os.environ.get("X_ACCESS_TOKEN")
@@ -73,26 +72,29 @@ def main():
     updated = bool(updated_entries)
 
     # --- X (Twitter) posting ---
-    # 必要な認証情報がある場合のみ投稿
-    required_env = ["X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET"]
+    required_env = ["TWITTER_APIKEY", "TWITTER_APIKEY_SECRET", "TWITTER_ACCESS_TOKEN", "TWITTER_ACCESS_TOKEN_SECRET"]
     if all(os.environ.get(k) for k in required_env):
-        for entry in updated_entries:
-            tweet_text = f"{entry['title']}\n{entry['link']}"
-            tweet_id = post_to_x(tweet_text)
-            if tweet_id is None:
-                continue  # Failed to post
+        if updated:
+            for entry in updated_entries:
+                tweet_text = f"{entry['title']}\n{entry['link']}"
+                tweet_id = post_to_x(tweet_text)
+                if tweet_id is None:
+                    continue  # Failed to post
 
-            # For feed_toc, reply for summary that includes this title
-            for toc_entry in feed_toc.entries:
-                summary = toc_entry.get("summary", "")
-                if entry["title"] in summary:
-                    reply_title = toc_entry.get("title", "")
-                    reply_link = toc_entry.get("link", "")
-                    reply_text = f"関連: {reply_title}\n{reply_link}\n{summary}"
-                    post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
-                    time.sleep(1)  # Avoid posting too fast
+                # For feed_toc, reply for summary that includes this title
+                for toc_entry in feed_toc.entries:
+                    summary = toc_entry.get("summary", "")
+                    if entry["title"] in summary:
+                        reply_title = toc_entry.get("title", "")
+                        reply_link = toc_entry.get("link", "")
+                        reply_text = f"関連: {reply_title}\n{reply_link}\n{summary}"
+                        post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
+                        time.sleep(1)  # Avoid posting too fast
 
-            time.sleep(2)  # Avoid rate limits
+                time.sleep(2)  # Avoid rate limits
+        else:
+            # updatedがfalseの場合は「アップデートがないです。」とツイート
+            post_to_x("アップデートがないです。")
     else:
         logging.warning("Twitter API credentials are not set. Skipping X posting.")
 
