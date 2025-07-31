@@ -14,10 +14,10 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     If in_reply_to_tweet_id is given, posts as a reply.
     Returns tweet id or None if failed.
     """
-    api_key = os.environ.get("X_API_KEY")
-    api_secret = os.environ.get("X_API_SECRET")
-    access_token = os.environ.get("X_ACCESS_TOKEN")
-    access_token_secret = os.environ.get("X_ACCESS_TOKEN_SECRET")
+    api_key = os.environ.get("TWITTER_APIKEY")
+    api_secret = os.environ.get("TWITTER_APIKEY_SECRET")
+    access_token = os.environ.get("TWITTER_ACCESS_TOKEN")
+    access_token_secret = os.environ.get("TWITTER_ACCESS_TOKEN_SECRET")
     if not (api_key and api_secret and access_token and access_token_secret):
         logging.error("Twitter API credentials are not set in environment variables.")
         return None
