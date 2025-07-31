@@ -28,7 +28,7 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     access_token = os.environ.get("TWITTER_ACCESS_TOKEN")
     access_token_secret = os.environ.get("TWITTER_ACCESS_TOKEN_SECRET")
     if not (api_key and api_secret and access_token and access_token_secret):
-        logging.error("Twitter API credentials are not set in environment variables.")
+        logging.error("Twitter APIの認証情報が環境変数に設定されていません。")
         return None
 
     auth = tweepy.OAuth1UserHandler(api_key, api_secret, access_token, access_token_secret)
@@ -41,10 +41,10 @@ def post_to_x(text, in_reply_to_tweet_id=None):
             )
         else:
             tweet = client.update_status(status=text)
-        logging.info(f"Tweet posted: {tweet.id}")
+        logging.info(f"TweetのポストID: {tweet.id}")
         return tweet.id
     except Exception as e:
-        logging.error(f"Failed to post tweet: {e}")
+        logging.error(f"Tweetに失敗 tweet: {e}")
         return None
 
 
@@ -113,9 +113,9 @@ def main():
                 tweet_text = f"{entry['title']}\n{entry['link']}"
                 tweet_id = post_to_x(tweet_text)
                 if tweet_id is None:
-                    continue  # Failed to post
+                    continue
 
-                # Reply for summary that includes this title in feed_toc
+                # feed_tocから関連情報を探してリプライ
                 for toc_entry in feed_toc.entries:
                     summary = toc_entry.get("summary", "")
                     if entry["title"] in summary:
@@ -123,13 +123,12 @@ def main():
                         reply_link = toc_entry.get("link", "")
                         reply_text = f"関連: {reply_title}\n{reply_link}\n{summary}"
                         post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
-                        time.sleep(1)  # Avoid posting too fast
-
-                time.sleep(2)  # Avoid rate limits
+                        time.sleep(1)
+                time.sleep(2)
         else:
-            logging.warning("No new updates found in the RSS feed.")
+            logging.warning("RSSフィードのアップデートが見つかりません.")
     else:
-        logging.warning("Twitter API credentials are not set. Skipping X posting.")
+        logging.warning("Twwitter APIの認証情報が不足しています。投稿をスキップします。")
 
     # 結果の出力
     if "GITHUB_OUTPUT" in os.environ:
