@@ -2,25 +2,114 @@ name: Post RSS Feed to X
 
 on:
   workflow_dispatch:
+    inputs:
+      rss_url:
+        description: "RSSフィードのURL"
+        required: true
+        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml"
+      rss_toc_url:
+        description: "RSS_詳細版フィードのURL"
+        required: true
+        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml"
+      minutes:
+        description: "何分以内に更新されたアイテムを投稿するか"
+        required: true
+        default: "720" # 12時間
+
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: "30 23 * * 0-4" # 月曜〜金曜の JST 8:30 (遅延を考慮して 30分に設定)だいたい10分遅延する
+
 
 jobs:
-  post_feed:
+  check_rss_and_post_feeds:
     runs-on: ubuntu-latest
+    outputs:
+      updated: ${{ steps.check_and_post.outputs.updated }}
     env:
       X_API_KEY: ${{ secrets.TWITTER_APIKEY }}
       X_API_SECRET: ${{ secrets.TWITTER_APIKEY_SECRET }}
       X_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
       X_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - name: Install dependencies
-      run: pip install feedparser tweepy
-    - name: Post feed to X
-      run: |
-        python post_feed_to_x.py "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml" "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml" 720
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install feedparser tweepy
+
+      - name: Check RSS and Post feed to X
+        id: check_and_post
+        env:
+          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
+          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml' }}
+          MINUTES: ${{ inputs.minutes || '720' }}
+        run: |
+          echo "▶️ RSS_URL: $RSS_URL"
+          echo "▶️ RSS_TOC_URL: $RSS_TOC_URL"  
+          echo "⏱ MINUTES: $MINUTES"
+          python post_feed_to_x.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
+
+      - name: Show Results
+        run: |
+          echo "✅ updated: ${{ steps.check_and_post.outputs.updated }}"
+          echo "📝 entries:"
+          echo '${{ steps.check_and_post.outputs.entries }}'
+  
+  re_check_rss_and_post_feeds:
+    needs: check_rss_and_post_feeds
+    if: needs.check_rss_and_post_feeds.outputs.updated == 'false'
+    runs-on: ubuntu-latest
+    outputs:
+      updated: ${{ steps.check_and_post.outputs.updated }}
+    env:
+      X_API_KEY: ${{ secrets.TWITTER_APIKEY }}
+      X_API_SECRET: ${{ secrets.TWITTER_APIKEY_SECRET }}
+      X_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+      X_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install feedparser tweepy
+
+      - name: Check RSS and Post feed to X
+        id: check_and_post
+        env:
+          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
+          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml' }}
+          MINUTES: ${{ inputs.minutes || '720' }}
+        run: |
+          echo "▶️ RSS_URL: $RSS_URL"
+          echo "▶️ RSS_TOC_URL: $RSS_TOC_URL"  
+          echo "⏱ MINUTES: $MINUTES"
+          python post_feed_to_x.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
+
+      - name: Show Results
+        run: |
+          echo "✅ updated: ${{ steps.check_and_post.outputs.updated }}"
+          echo "📝 entries:"
+          echo '${{ steps.check_and_post.outputs.entries }}'
+          
+  twitter-non-post:
+    needs: re_check_rss_and_post_feeds
+    if: needs.re_check_rss_and_post_feeds.outputs.updated == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: noweh/post-tweet-v2-action@v1.0
+        with:
+          message: "現時刻では官報の更新が見つかりません。\nhttps://www.kanpo.go.jp/"
+          consumer-key: ${{ secrets.TWITTER_APIKEY }}
+          consumer-secret: ${{ secrets.TWITTER_APIKEY_SECRET }}
+          access-token: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          access-token-secret: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
