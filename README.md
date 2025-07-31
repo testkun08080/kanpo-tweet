@@ -8,6 +8,25 @@
 アカウントはこちら、https://x.com/dailykanpo
 ---
 
+## ローカルテスト用
+```zsh
+RSS_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml'
+MINUTES="720"
+uv run scripts/check_rss.py "$RSS_URL" "$MINUTES"
+```
+
+```zsh
+X_API_KEY="your-api-key"
+X_API_SECRET="your-api-secret"
+X_ACCESS_TOKEN="your-access-token"
+X_ACCESS_TOKEN_SECRET="your-access-token-secret"
+RSS_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml'
+TOC_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml'
+
+# 30分以内のフィードをチェック
+uv run scripts/post_feed_to_x.py "$RSS_URL" "$TOC_URL" 720
+```
+
 ## 💬 補足
 - 本tweetは非公式のものであり、正確性を保証するものではありません。
 - 利用に関して問題があれば[Issue](https://github.com/testkun08080/kanpo-rss/issues)からご連絡ください。
