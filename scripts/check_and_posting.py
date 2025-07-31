@@ -93,8 +93,7 @@ def main():
 
                 time.sleep(2)  # Avoid rate limits
         else:
-            # updatedがfalseの場合は「アップデートがないです。」とツイート
-            post_to_x("アップデートがないです。")
+            logging.warning("No new updates found in the RSS feed.")
     else:
         logging.warning("Twitter API credentials are not set. Skipping X posting.")
 
