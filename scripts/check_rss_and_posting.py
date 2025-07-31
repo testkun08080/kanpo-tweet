@@ -131,7 +131,7 @@ def main():
     else:
         logging.warning("Twitter API credentials are not set. Skipping X posting.")
 
-    # --- Output for GitHub Actions ---
+    # 結果の出力
     if "GITHUB_OUTPUT" in os.environ:
         output_path = os.environ["GITHUB_OUTPUT"]
         with open(output_path, "a") as fh:
