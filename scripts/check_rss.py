@@ -31,6 +31,7 @@ def main():
             updated_entries.append({
                 "title": entry.get("title", ""),
                 "link": entry.get("link", ""),
+                "summary": entry.get("summary", ""),
                 "pubDate": pub_dt.strftime("%Y-%m-%d %H:%M:%S, GMT"),
             })
 
