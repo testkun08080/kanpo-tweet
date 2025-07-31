@@ -52,7 +52,7 @@ jobs:
           echo "▶️ RSS_URL: $RSS_URL"
           echo "▶️ RSS_TOC_URL: $RSS_TOC_URL"  
           echo "⏱ MINUTES: $MINUTES"
-          python post_feed_to_x.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
+          python check_rss_and_posting.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
 
       - name: Show Results
         run: |
@@ -93,7 +93,7 @@ jobs:
           echo "▶️ RSS_URL: $RSS_URL"
           echo "▶️ RSS_TOC_URL: $RSS_TOC_URL"  
           echo "⏱ MINUTES: $MINUTES"
-          python post_feed_to_x.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
+          python check_rss_and_posting.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
 
       - name: Show Results
         run: |

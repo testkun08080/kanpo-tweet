@@ -1,3 +1,5 @@
+"""指定した時間幅内でRSSフィードの更新をチェックしてTweetするスクリプト"""
+
 import sys
 import feedparser
 import time
@@ -10,9 +12,16 @@ import tweepy
 
 def post_to_x(text, in_reply_to_tweet_id=None):
     """
-    Post a tweet to X (Twitter) using tweepy (Twitter API v2).
-    If in_reply_to_tweet_id is given, posts as a reply.
-    Returns tweet id or None if failed.
+    テキストをX（旧Twitter）に投稿します。tweepy（Twitter API v2）を使用します。
+    in_reply_to_tweet_idが指定された場合は、リプライとして投稿します。
+    投稿に成功した場合はツイートIDを返し、失敗した場合はNoneを返します。
+
+    Args:
+        text (str): 投稿するツイートの本文。
+        in_reply_to_tweet_id (Optional[int]): リプライ先のツイートID（省略可）。
+
+    Returns:
+        Optional[int]: 投稿されたツイートのID。失敗した場合はNone。
     """
     api_key = os.environ.get("TWITTER_APIKEY")
     api_secret = os.environ.get("TWITTER_APIKEY_SECRET")
@@ -40,6 +49,31 @@ def post_to_x(text, in_reply_to_tweet_id=None):
 
 
 def main():
+    """
+    RSSフィードをチェックし、指定した時間幅内に更新されたエントリを抽出してX（旧Twitter）に投稿します。
+    また、関連する要約情報があればリプライとして投稿します。GitHub Actions用の出力も行います。
+
+    コマンドライン引数:
+        rss_url (str): チェック対象のRSSフィードURL。
+        rss_toc_url (str): 関連情報取得用のRSSフィードURL。
+        minutes (int): 何分前からの更新をチェックするか。
+
+    環境変数:
+        TWITTER_APIKEY: X APIキー。
+        TWITTER_APIKEY_SECRET: X APIキーシークレット。
+        TWITTER_ACCESS_TOKEN: Xアクセストークン。
+        TWITTER_ACCESS_TOKEN_SECRET: Xアクセストークンシークレット。
+        GITHUB_OUTPUT: GitHub Actions用の出力ファイルパス（オプション）。
+
+    処理内容:
+        1. RSSフィードから指定時間幅内の新規エントリを抽出。
+        2. 新規エントリがあればXに投稿し、関連する要約情報があればリプライとして投稿。
+        3. GitHub Actions用に更新有無とエントリ情報を出力。
+
+    例外:
+        Twitter APIの認証情報が不足している場合は投稿をスキップします。
+        新規エントリがない場合は警告を出力します。
+    """
     logging.basicConfig(level=logging.INFO)
 
     rss_url = sys.argv[1]
@@ -59,7 +93,7 @@ def main():
         if hasattr(entry, "published_parsed"):
             pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
         else:
-            continue  # pubDateがないitemはスキップ
+            continue  # Skip items without pubDate
 
         if pub_dt >= diff_time:
             updated_entries.append({
@@ -73,7 +107,7 @@ def main():
 
     # --- X (Twitter) posting ---
     required_env = ["TWITTER_APIKEY", "TWITTER_APIKEY_SECRET", "TWITTER_ACCESS_TOKEN", "TWITTER_ACCESS_TOKEN_SECRET"]
-    if all(os.environ.get(k) for k in required_env):
+    if all(os.environ.get(env_key) for env_key in required_env):
         if updated:
             for entry in updated_entries:
                 tweet_text = f"{entry['title']}\n{entry['link']}"
@@ -81,7 +115,7 @@ def main():
                 if tweet_id is None:
                     continue  # Failed to post
 
-                # For feed_toc, reply for summary that includes this title
+                # Reply for summary that includes this title in feed_toc
                 for toc_entry in feed_toc.entries:
                     summary = toc_entry.get("summary", "")
                     if entry["title"] in summary:
