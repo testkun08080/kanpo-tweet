@@ -1,4 +1,4 @@
-name: rss-to-twitter
+name: kanpo-tweet
 
 on:
   workflow_dispatch:

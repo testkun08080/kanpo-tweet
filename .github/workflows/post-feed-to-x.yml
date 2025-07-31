@@ -1,4 +1,4 @@
-name: Post RSS Feed to X
+name: Knapo Tweet Post(RSS Feed to X)
 
 on:
   workflow_dispatch:
