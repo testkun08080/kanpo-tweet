@@ -88,7 +88,9 @@ def main():
     feed = feedparser.parse(rss_url)
     feed_toc = feedparser.parse(rss_toc_url)
     updated_entries = []
+    updated_toc_entries = []
 
+    # RSSフィードのエントリをチェックして、更新必要分だけにフィルタリングする
     for entry in feed.entries:
         if hasattr(entry, "published_parsed"):
             pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
@@ -105,28 +107,58 @@ def main():
 
     updated = bool(updated_entries)
 
+    # RSS_TOC(詳細版)もフィードのエントリをチェックして、更新必要分だけにフィルタリングする
+    for entry in feed_toc.entries:
+        if hasattr(entry, "published_parsed"):
+            pub_dt = datetime(*entry.published_parsed[:6], tzinfo=timezone.utc)
+        else:
+            continue  # Skip items without pubDate
+
+        if pub_dt >= diff_time:
+            updated_toc_entries.append({
+                "title": entry.get("title", ""),
+                "link": entry.get("link", ""),
+                "summary": entry.get("summary", ""),
+                "pubDate": pub_dt.strftime("%Y-%m-%d %H:%M:%S, GMT"),
+                "categories": [tag["term"] for tag in entry.get("tags", [])],
+            })
+    logging.info(f"更新されたRSSフィードのエントリ数: {len(updated_entries)}")
+    logging.info(f"更新されたRSS_TOCのエントリ数: {len(updated_toc_entries)}")
+
     # --- X (Twitter) posting ---
+    base_tags = ["#官報", "#官報通知"]
     required_env = ["TWITTER_APIKEY", "TWITTER_APIKEY_SECRET", "TWITTER_ACCESS_TOKEN", "TWITTER_ACCESS_TOKEN_SECRET"]
     if all(os.environ.get(env_key) for env_key in required_env):
         if updated:
             for entry in updated_entries:
-                tweet_text = f"{entry['title']}\n{entry['link']}"
+                tweet_text = f"{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}"
+                logging.info(f"Tweet内容: {tweet_text}")
                 tweet_id = post_to_x(tweet_text)
                 logging.info(f"Tweet ID: {tweet_id}")
                 if tweet_id is None:
                     continue
-
+                continue  # ひとまずスキップ
                 # feed_tocから関連情報を探してリプライ
-                for toc_entry in feed_toc.entries:
+                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                for toc_entry in serch_entries:
                     summary = toc_entry.get("summary", "")
+                    categories = toc_entry.get("categories", [])
                     if entry["title"] in summary:
-                        logging.info(entry["title"], "in", summary)
                         reply_title = toc_entry.get("title", "")
                         reply_link = toc_entry.get("link", "")
-                        reply_text = f"{reply_title}\n{reply_link}"
-                        logging.info(f"reply_text: {reply_text}")
-                        post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
+
+                        if categories:
+                            categories_tags = " ".join([f"#{cat}" for cat in categories])
+                            reply_text = f"カテゴリ:{categories}\n{reply_title}\n{reply_link}\n\n{categories_tags}"
+                        else:
+                            reply_text = f"{reply_title}\n{reply_link}"
+                        # logging.info(f"reply_text: {reply_text}")
+                        # post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
                         time.sleep(1)
+                    else:
+                        logging.info(f"{entry['title']} not in {summary}")
+
+                # リプライの間隔を空ける
                 time.sleep(2)
         else:
             logging.warning("RSSフィードのアップデートが見つかりません.")
