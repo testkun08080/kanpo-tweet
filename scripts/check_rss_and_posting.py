@@ -112,6 +112,7 @@ def main():
             for entry in updated_entries:
                 tweet_text = f"{entry['title']}\n{entry['link']}"
                 tweet_id = post_to_x(tweet_text)
+                logging.info(f"Tweet ID: {tweet_id}")
                 if tweet_id is None:
                     continue
 
@@ -119,9 +120,11 @@ def main():
                 for toc_entry in feed_toc.entries:
                     summary = toc_entry.get("summary", "")
                     if entry["title"] in summary:
+                        logging.info(entry["title"], "in", summary)
                         reply_title = toc_entry.get("title", "")
                         reply_link = toc_entry.get("link", "")
-                        reply_text = f"関連: {reply_title}\n{reply_link}\n{summary}"
+                        reply_text = f"{reply_title}\n{reply_link}"
+                        logging.info(f"reply_text: {reply_text}")
                         post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
                         time.sleep(1)
                 time.sleep(2)
