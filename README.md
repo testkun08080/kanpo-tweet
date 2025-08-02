@@ -23,7 +23,7 @@ TWITTER_ACCESS_TOKEN_SECRET="access-token-secret"
 RSS_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml'
 RSS_TOC_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml'
 
-# 30分以内のフィードをチェック
+# 720分以内のフィードをチェック
 uv run scripts/check_rss_and_posting.py "$RSS_URL" "$RSS_TOC_URL" 720
 ```
 
