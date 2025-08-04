@@ -1,12 +1,13 @@
 """指定した時間幅内でRSSフィードの更新をチェックしてTweetするスクリプト"""
 
+import json
+import logging
+import os
 import sys
-import feedparser
 import time
 from datetime import datetime, timedelta, timezone
-import os
-import logging
-import json
+
+import feedparser
 import tweepy
 
 
@@ -48,12 +49,7 @@ def post_to_x(text, in_reply_to_tweet_id=None):
                 text=text,
                 in_reply_to_tweet_id=in_reply_to_tweet_id,
             )
-            # tweet = client.update_status(
-            #     status=text, in_reply_to_status_id=in_reply_to_tweet_id, auto_populate_reply_metadata=True
-            # )
         else:
-            # tweet = client.update_status(status=text)
-
             response = client.create_tweet(text=text)
 
         tweet_id = response.data["id"]
@@ -149,13 +145,14 @@ def main():
     if all(os.environ.get(env_key) for env_key in required_env):
         if updated:
             for entry in updated_entries:
+                # ツイート内容を作成
                 tweet_text = f"{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}"
                 logging.info(f"Tweet内容: {tweet_text}")
                 tweet_id = post_to_x(tweet_text)
                 logging.info(f"Tweet ID: {tweet_id}")
                 if tweet_id is None:
                     continue
-                continue  # ひとまずスキップ
+
                 # feed_tocから関連情報を探してリプライ
                 serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
                 for toc_entry in serch_entries:
@@ -170,8 +167,8 @@ def main():
                             reply_text = f"カテゴリ:{categories}\n{reply_title}\n{reply_link}\n\n{categories_tags}"
                         else:
                             reply_text = f"{reply_title}\n{reply_link}"
-                        # logging.info(f"reply_text: {reply_text}")
-                        # post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
+                        logging.info(f"reply_text: {reply_text}")
+                        post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
                         time.sleep(1)
                     else:
                         logging.info(f"{entry['title']} not in {summary}")
