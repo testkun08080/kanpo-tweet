@@ -23,6 +23,7 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     Returns:
         Optional[int]: 投稿されたツイートのID。失敗した場合はNone。
     """
+    # bearer_token = os.environ.get("BEARER_TOKEN")
     api_key = os.environ.get("X_API_KEY")
     api_secret = os.environ.get("X_API_SECRET")
     access_token = os.environ.get("X_ACCESS_TOKEN")
@@ -31,18 +32,34 @@ def post_to_x(text, in_reply_to_tweet_id=None):
         logging.error("Twitter APIの認証情報が環境変数に設定されていません。")
         return None
 
-    auth = tweepy.OAuth1UserHandler(api_key, api_secret, access_token, access_token_secret)
-    client = tweepy.API(auth)
+    # auth = tweepy.OAuth1UserHandler(api_key, api_secret, access_token, access_token_secret)
+    # client = tweepy.API(auth)
+
+    client = tweepy.Client(
+        consumer_key=api_key,
+        consumer_secret=api_secret,
+        access_token=access_token,
+        access_token_secret=access_token_secret,
+    )
 
     try:
         if in_reply_to_tweet_id:
-            tweet = client.update_status(
-                status=text, in_reply_to_status_id=in_reply_to_tweet_id, auto_populate_reply_metadata=True
+            response = client.create_tweet(
+                text=text,
+                in_reply_to_tweet_id=in_reply_to_tweet_id,
             )
+            # tweet = client.update_status(
+            #     status=text, in_reply_to_status_id=in_reply_to_tweet_id, auto_populate_reply_metadata=True
+            # )
         else:
-            tweet = client.update_status(status=text)
-        logging.info(f"TweetのポストID: {tweet.id}")
-        return tweet.id
+            # tweet = client.update_status(status=text)
+
+            response = client.create_tweet(text=text)
+
+        tweet_id = response.data["id"]
+        logging.info(f"TweetのポストID: {tweet_id}")
+
+        return tweet_id
     except Exception as e:
         logging.error(f"Tweetに失敗 tweet: {e}")
         return None
@@ -59,10 +76,11 @@ def main():
         minutes (int): 何分前からの更新をチェックするか。
 
     環境変数:
-        TWITTER_APIKEY: X APIキー。
-        TWITTER_APIKEY_SECRET: X APIキーシークレット。
-        TWITTER_ACCESS_TOKEN: Xアクセストークン。
-        TWITTER_ACCESS_TOKEN_SECRET: Xアクセストークンシークレット。
+        BEARER_TOKEN: X Bearerトークン。
+        X_API_KEY: X APIキー。
+        X_API_SECRET: X APIキーシークレット。
+        X_ACCESS_TOKEN: Xアクセストークン。
+        X_ACCESS_TOKEN_SECRET: Xアクセストークンシークレット。
         GITHUB_OUTPUT: GitHub Actions用の出力ファイルパス（オプション）。
 
     処理内容:
