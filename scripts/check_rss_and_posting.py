@@ -23,10 +23,10 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     Returns:
         Optional[int]: 投稿されたツイートのID。失敗した場合はNone。
     """
-    api_key = os.environ.get("TWITTER_APIKEY")
-    api_secret = os.environ.get("TWITTER_APIKEY_SECRET")
-    access_token = os.environ.get("TWITTER_ACCESS_TOKEN")
-    access_token_secret = os.environ.get("TWITTER_ACCESS_TOKEN_SECRET")
+    api_key = os.environ.get("X_API_KEY")
+    api_secret = os.environ.get("X_API_SECRET")
+    access_token = os.environ.get("X_ACCESS_TOKEN")
+    access_token_secret = os.environ.get("X_ACCESS_TOKEN_SECRET")
     if not (api_key and api_secret and access_token and access_token_secret):
         logging.error("Twitter APIの認証情報が環境変数に設定されていません。")
         return None
@@ -127,7 +127,7 @@ def main():
 
     # --- X (Twitter) posting ---
     base_tags = ["#官報", "#官報通知"]
-    required_env = ["TWITTER_APIKEY", "TWITTER_APIKEY_SECRET", "TWITTER_ACCESS_TOKEN", "TWITTER_ACCESS_TOKEN_SECRET"]
+    required_env = ["X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET"]
     if all(os.environ.get(env_key) for env_key in required_env):
         if updated:
             for entry in updated_entries:
