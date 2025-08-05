@@ -16,10 +16,10 @@ uv run scripts/check_rss.py "$RSS_URL" "$MINUTES"
 ```
 
 ```zsh
-TWITTER_APIKEY="api-key"
-TWITTER_APIKEY_SECRET="api-secret"
-TWITTER_ACCESS_TOKEN="access-token"
-TWITTER_ACCESS_TOKEN_SECRET="access-token-secret"
+X_API_KEY="api-key"
+X_API_SECRET="api-secret"
+X_ACCESS_TOKEN="access-token"
+X_ACCESS_TOKEN_SECRET="access-token-secret"
 RSS_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml'
 RSS_TOC_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml'
 
