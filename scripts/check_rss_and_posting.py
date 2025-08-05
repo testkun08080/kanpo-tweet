@@ -33,9 +33,6 @@ def post_to_x(text, in_reply_to_tweet_id=None):
         logging.error("Twitter APIの認証情報が環境変数に設定されていません。")
         return None
 
-    # auth = tweepy.OAuth1UserHandler(api_key, api_secret, access_token, access_token_secret)
-    # client = tweepy.API(auth)
-
     client = tweepy.Client(
         consumer_key=api_key,
         consumer_secret=api_secret,
@@ -52,9 +49,8 @@ def post_to_x(text, in_reply_to_tweet_id=None):
         else:
             response = client.create_tweet(text=text)
 
+        logging.info(f"response!!!: {response}")
         tweet_id = response.data["id"]
-        logging.info(f"TweetのポストID: {tweet_id}")
-
         return tweet_id
     except Exception as e:
         logging.error(f"Tweetに失敗 tweet: {e}")
@@ -147,31 +143,34 @@ def main():
             for entry in updated_entries:
                 # ツイート内容を作成
                 tweet_text = f"{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}"
-                logging.info(f"Tweet内容: {tweet_text}")
+
+                logging.info(f":-------------------Tweet内容:-------------------")
+                logging.info(tweet_text)
                 tweet_id = post_to_x(tweet_text)
                 logging.info(f"Tweet ID: {tweet_id}")
+                logging.info(f":-------------------Tweet内容End:-------------------")
                 if tweet_id is None:
                     continue
 
-                # feed_tocから関連情報を探してリプライ
-                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
-                for toc_entry in serch_entries:
-                    summary = toc_entry.get("summary", "")
-                    categories = toc_entry.get("categories", [])
-                    if entry["title"] in summary:
-                        reply_title = toc_entry.get("title", "")
-                        reply_link = toc_entry.get("link", "")
+                # # feed_tocから関連情報を探してリプライ
+                # serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                # for toc_entry in serch_entries:
+                #     summary = toc_entry.get("summary", "")
+                #     categories = toc_entry.get("categories", [])
+                #     if entry["title"] in summary:
+                #         reply_title = toc_entry.get("title", "")
+                #         reply_link = toc_entry.get("link", "")
 
-                        if categories:
-                            categories_tags = " ".join([f"#{cat}" for cat in categories])
-                            reply_text = f"カテゴリ:{categories}\n{reply_title}\n{reply_link}\n\n{categories_tags}"
-                        else:
-                            reply_text = f"{reply_title}\n{reply_link}"
-                        logging.info(f"reply_text: {reply_text}")
-                        post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
-                        time.sleep(1)
-                    else:
-                        logging.info(f"{entry['title']} not in {summary}")
+                #         if categories:
+                #             categories_tags = " ".join([f"#{cat}" for cat in categories])
+                #             reply_text = f"{reply_title}\n{reply_link}\n\n{categories_tags}"
+                #         else:
+                #             reply_text = f"{reply_title}\n{reply_link}"
+                #         logging.info(f"reply_text: {reply_text}")
+                #         post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
+                #         time.sleep(1)
+                #     else:
+                #         logging.info(f"{entry['title']} not in {summary}")
 
                 # リプライの間隔を空ける
                 time.sleep(2)
