@@ -10,6 +10,8 @@ from datetime import datetime, timedelta, timezone
 import feedparser
 import tweepy
 
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
 
 def post_to_x(text, in_reply_to_tweet_id=None):
     """
@@ -38,6 +40,7 @@ def post_to_x(text, in_reply_to_tweet_id=None):
         consumer_secret=api_secret,
         access_token=access_token,
         access_token_secret=access_token_secret,
+        wait_on_rate_limit=True,
     )
 
     try:
