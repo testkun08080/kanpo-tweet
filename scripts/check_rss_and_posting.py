@@ -155,25 +155,25 @@ def main():
                 if tweet_id is None:
                     continue
 
-                # # feed_tocから関連情報を探してリプライ
-                # serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
-                # for toc_entry in serch_entries:
-                #     summary = toc_entry.get("summary", "")
-                #     categories = toc_entry.get("categories", [])
-                #     if entry["title"] in summary:
-                #         reply_title = toc_entry.get("title", "")
-                #         reply_link = toc_entry.get("link", "")
+                # feed_tocから関連情報を探してリプライ
+                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                for toc_entry in serch_entries:
+                    summary = toc_entry.get("summary", "")
+                    categories = toc_entry.get("categories", [])
+                    if entry["title"] in summary:
+                        reply_title = toc_entry.get("title", "")
+                        reply_link = toc_entry.get("link", "")
 
-                #         if categories:
-                #             categories_tags = " ".join([f"#{cat}" for cat in categories])
-                #             reply_text = f"{reply_title}\n{reply_link}\n\n{categories_tags}"
-                #         else:
-                #             reply_text = f"{reply_title}\n{reply_link}"
-                #         logging.info(f"reply_text: {reply_text}")
-                #         post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
-                #         time.sleep(1)
-                #     else:
-                #         logging.info(f"{entry['title']} not in {summary}")
+                        if categories:
+                            categories_tags = " ".join([f"#{cat}" for cat in categories])
+                            reply_text = f"{reply_title}\n{reply_link}\n\n{categories_tags}"
+                        else:
+                            reply_text = f"{reply_title}\n{reply_link}"
+                        logging.info(f"reply_text: {reply_text}")
+                        post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
+                        time.sleep(1)
+                    else:
+                        logging.info(f"{entry['title']} not in {summary}")
 
                 # リプライの間隔を空ける
                 time.sleep(2)
