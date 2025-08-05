@@ -6,11 +6,29 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+import re
 
 import feedparser
 import tweepy
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+
+TWEET_URL_LENGTH = 23
+MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
+
+
+def count_tweet_length(text: str) -> int:
+    """
+    Twitterの文字数カウント仕様に準拠して、テキストの長さを返す。
+    URLはすべて23文字としてカウントする。
+    """
+    # URLを見つけてその部分を23文字に換算
+    url_regex = re.compile(r"https?://\S+")
+    adjusted_text = text
+    for url_match in url_regex.finditer(text):
+        url = url_match.group(0)
+        adjusted_text = adjusted_text.replace(url, "X" * TWEET_URL_LENGTH, 1)
+    return len(adjusted_text)
 
 
 def post_to_x(text, in_reply_to_tweet_id=None):
@@ -26,6 +44,10 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     Returns:
         Optional[int]: 投稿されたツイートのID。失敗した場合はNone。
     """
+
+    logging.info(f":-------------------Tweet内容:-------------------")
+    logging.info(text)
+
     # bearer_token = os.environ.get("BEARER_TOKEN")
     api_key = os.environ.get("X_API_KEY")
     api_secret = os.environ.get("X_API_SECRET")
@@ -43,6 +65,8 @@ def post_to_x(text, in_reply_to_tweet_id=None):
         wait_on_rate_limit=True,
     )
 
+    tweet_id = None  # 先に定義しておくことで finally でも参照可能
+
     try:
         if in_reply_to_tweet_id:
             response = client.create_tweet(
@@ -52,12 +76,17 @@ def post_to_x(text, in_reply_to_tweet_id=None):
         else:
             response = client.create_tweet(text=text)
 
-        logging.info(f"response!!!: {response}")
         tweet_id = response.data["id"]
-        return tweet_id
+
     except Exception as e:
         logging.error(f"Tweetに失敗 tweet: {e}")
-        return None
+        tweet_id = None
+
+    finally:
+        logging.info(f"Tweet ID: {tweet_id}")
+        logging.info(f":-------------------Tweet内容End:-------------------")
+
+    return tweet_id
 
 
 def main():
@@ -145,35 +174,60 @@ def main():
         if updated:
             for entry in updated_entries:
                 # ツイート内容を作成
-                tweet_text = f"{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}"
-
-                logging.info(f":-------------------Tweet内容:-------------------")
-                logging.info(tweet_text)
+                tweet_text = f"📚{entry['title']}]\n{entry['link']}\n\n{' '.join(base_tags)}\n\n各項目のリンクなどは以下リプライをご覧ください..."
                 tweet_id = post_to_x(tweet_text)
-                logging.info(f"Tweet ID: {tweet_id}")
-                logging.info(f":-------------------Tweet内容End:-------------------")
                 if tweet_id is None:
                     continue
 
                 # feed_tocから関連情報を探してリプライ
+                batch_text = ""
                 serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
                 for toc_entry in serch_entries:
                     summary = toc_entry.get("summary", "")
                     categories = toc_entry.get("categories", [])
-                    if entry["title"] in summary:
-                        reply_title = toc_entry.get("title", "")
-                        reply_link = toc_entry.get("link", "")
 
-                        if categories:
-                            categories_tags = " ".join([f"#{cat}" for cat in categories])
-                            reply_text = f"{reply_title}\n{reply_link}\n\n{categories_tags}"
-                        else:
-                            reply_text = f"{reply_title}\n{reply_link}"
-                        logging.info(f"reply_text: {reply_text}")
-                        post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
-                        time.sleep(1)
-                    else:
+                    if entry["title"] not in summary:
                         logging.info(f"{entry['title']} not in {summary}")
+                        continue
+
+                    reply_title = toc_entry.get("title", "")
+                    reply_link = toc_entry.get("link", "")
+
+                    if categories:
+                        categories_tags = " ".join([f"#{cat}" for cat in categories])
+                        entry_text = f"✐{reply_title}\n{reply_link}\n{categories_tags}\n\n"
+                    else:
+                        entry_text = f"✐{reply_title}\n{reply_link}\n\n"
+
+                    # このentryを追加したら文字数制限を超えるか？
+                    if count_tweet_length(batch_text + entry_text) > MAX_TWEET_LENGTH:
+                        post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+                        time.sleep(1)
+                        batch_text = entry_text
+                    else:
+                        batch_text += entry_text
+
+                # 最後に残っていたら投稿
+                if batch_text:
+                    post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+
+                # for toc_entry in serch_entries:
+                #     summary = toc_entry.get("summary", "")
+                #     categories = toc_entry.get("categories", [])
+                #     if entry["title"] in summary:
+                #         reply_title = toc_entry.get("title", "")
+                #         reply_link = toc_entry.get("link", "")
+
+                #         if categories:
+                #             categories_tags = " ".join([f"#{cat}" for cat in categories])
+                #             reply_text = f"{reply_title}\n{reply_link}\n\n{categories_tags}"
+                #         else:
+                #             reply_text = f"{reply_title}\n{reply_link}"
+                #         logging.info(f"reply_text: {reply_text}")
+                #         post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
+                #         time.sleep(1)
+                #     else:
+                #         logging.info(f"{entry['title']} not in {summary}")
 
                 # リプライの間隔を空ける
                 time.sleep(2)
