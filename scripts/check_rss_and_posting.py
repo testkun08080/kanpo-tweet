@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(n
 
 TWEET_URL_LENGTH = 23
 MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
+RSS_VIEWER_URL = "https://testkun08080.github.io/kanpo-rss"
 
 
 def count_tweet_length(text: str) -> int:
@@ -174,7 +175,9 @@ def main():
         if updated:
             for entry in updated_entries:
                 # ツイート内容を作成
-                tweet_text = f"📚{entry['title']}]\n{entry['link']}\n\n{' '.join(base_tags)}\n\n各項目のリンクなどは以下リプライをご覧ください..."
+                # extra = "各項目のリンクなどは以下リプライをご覧ください.."
+                extra = f"以下RSSビューワーwebで項目ごとで見ることも可能です。。。\n{RSS_VIEWER_URL}"
+                tweet_text = f"📚{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}\n\n{extra}"
                 tweet_id = post_to_x(tweet_text)
                 if tweet_id is None:
                     continue
@@ -210,24 +213,6 @@ def main():
                 # 最後に残っていたら投稿
                 if batch_text:
                     post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
-
-                # for toc_entry in serch_entries:
-                #     summary = toc_entry.get("summary", "")
-                #     categories = toc_entry.get("categories", [])
-                #     if entry["title"] in summary:
-                #         reply_title = toc_entry.get("title", "")
-                #         reply_link = toc_entry.get("link", "")
-
-                #         if categories:
-                #             categories_tags = " ".join([f"#{cat}" for cat in categories])
-                #             reply_text = f"{reply_title}\n{reply_link}\n\n{categories_tags}"
-                #         else:
-                #             reply_text = f"{reply_title}\n{reply_link}"
-                #         logging.info(f"reply_text: {reply_text}")
-                #         post_to_x(reply_text, in_reply_to_tweet_id=tweet_id)
-                #         time.sleep(1)
-                #     else:
-                #         logging.info(f"{entry['title']} not in {summary}")
 
                 # リプライの間隔を空ける
                 time.sleep(2)
