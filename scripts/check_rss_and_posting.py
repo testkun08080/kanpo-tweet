@@ -182,37 +182,37 @@ def main():
                 if tweet_id is None:
                     continue
 
-                # feed_tocから関連情報を探してリプライ
-                batch_text = ""
-                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
-                for toc_entry in serch_entries:
-                    summary = toc_entry.get("summary", "")
-                    categories = toc_entry.get("categories", [])
+                # # feed_tocから関連情報を探してリプライ
+                # batch_text = ""
+                # serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                # for toc_entry in serch_entries:
+                #     summary = toc_entry.get("summary", "")
+                #     categories = toc_entry.get("categories", [])
 
-                    if entry["title"] not in summary:
-                        logging.info(f"{entry['title']} not in {summary}")
-                        continue
+                #     if entry["title"] not in summary:
+                #         logging.info(f"{entry['title']} not in {summary}")
+                #         continue
 
-                    reply_title = toc_entry.get("title", "")
-                    reply_link = toc_entry.get("link", "")
+                #     reply_title = toc_entry.get("title", "")
+                #     reply_link = toc_entry.get("link", "")
 
-                    if categories:
-                        categories_tags = " ".join([f"#{cat}" for cat in categories])
-                        entry_text = f"✐{reply_title}\n{reply_link}\n{categories_tags}\n\n"
-                    else:
-                        entry_text = f"✐{reply_title}\n{reply_link}\n\n"
+                #     if categories:
+                #         categories_tags = " ".join([f"#{cat}" for cat in categories])
+                #         entry_text = f"✐{reply_title}\n{reply_link}\n{categories_tags}\n\n"
+                #     else:
+                #         entry_text = f"✐{reply_title}\n{reply_link}\n\n"
 
-                    # このentryを追加したら文字数制限を超えるか？
-                    if count_tweet_length(batch_text + entry_text) > MAX_TWEET_LENGTH:
-                        post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
-                        time.sleep(1)
-                        batch_text = entry_text
-                    else:
-                        batch_text += entry_text
+                #     # このentryを追加したら文字数制限を超えるか？
+                #     if count_tweet_length(batch_text + entry_text) > MAX_TWEET_LENGTH:
+                #         post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+                #         time.sleep(1)
+                #         batch_text = entry_text
+                #     else:
+                #         batch_text += entry_text
 
-                # 最後に残っていたら投稿
-                if batch_text:
-                    post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+                # # 最後に残っていたら投稿
+                # if batch_text:
+                #     post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
 
                 # リプライの間隔を空ける
                 time.sleep(2)
