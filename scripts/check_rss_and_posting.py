@@ -10,6 +10,9 @@ import re
 
 import feedparser
 import tweepy
+from google import genai
+from google.genai import types
+
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
@@ -18,10 +21,52 @@ MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
 RSS_VIEWER_URL = "https://testkun08080.github.io/kanpo-rss"
 
 
+def ping_to_gemini(prompt: str) -> str:
+    """Gemini API にプロンプトを送信し、応答を返す関数。
+
+    Google の Gemini モデル「gemini-2.5-flash」を使用して、
+    指定したプロンプトに基づくテキストを生成します。
+    APIキーは環境変数 `GEMINI_API_KEY` から取得します。
+    処理速度を優先するため "thinking" 機能は無効化しています。
+
+    Args:
+        prompt (str): Gemini に送信するプロンプト（質問や指示文）。
+
+    Returns:
+        str: Gemini から返ってきた応答テキスト。
+
+    Raises:
+        EnvironmentError: 環境変数 `GEMINI_API_KEY` が設定されていない場合。
+        Exception: Gemini API リクエストが失敗した場合など。
+    """
+    api_key = os.environ.get("GEMINI_API_KEY")
+    if not api_key:
+        raise EnvironmentError("環境変数 GEMINI_API_KEY が設定されていません。")
+
+    try:
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash-lite",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_budget=0)  # thinking無効化
+            ),
+        )
+        return response.text
+    except Exception as e:
+        return f"エラーが発生しました: {str(e)}"
+
+
 def count_tweet_length(text: str) -> int:
     """
     Twitterの文字数カウント仕様に準拠して、テキストの長さを返す。
     URLはすべて23文字としてカウントする。
+
+    Args:
+        text (str): ツイートテキスト
+
+    Returns:
+        Optional[int]: 投稿されたツイートのID。失敗した場合はNone。
     """
     # URLを見つけてその部分を23文字に換算
     url_regex = re.compile(r"https?://\S+")
@@ -181,6 +226,36 @@ def main():
                 tweet_id = post_to_x(tweet_text)
                 if tweet_id is None:
                     continue
+
+                # # feed_tocから関連情報を探してリプライ(with gemini)
+                # batch_text = ""
+                # serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                # for toc_entry in serch_entries:
+                #     summary = toc_entry.get("summary", "")
+                #     categories = toc_entry.get("categories", [])
+
+                #     if entry["title"] not in summary:
+                #         logging.info(f"{entry['title']} not in {summary}")
+                #         continue
+
+                #     reply_title = toc_entry.get("title", "")
+                #     reply_link = toc_entry.get("link", "")
+
+                #     if categories:
+                #         categories_tags = " ".join([f"#{cat}" for cat in categories])
+                #         entry_text = f"✐{reply_title}\n{reply_link}\n{categories_tags}\n\n"
+                #     else:
+                #         entry_text = f"✐{reply_title}\n{reply_link}\n\n"
+
+                #     batch_text += entry_text
+
+                # print("batch_text", batch_text)
+
+                # template = "簡潔なまとめ\n\nタグ"
+                # base_prompt = f"以下のものは、官報のリンクとタグをまとめたものです。\nこれをツイートに治るように159文字以内で、tweet用に簡潔にまとめてください。\nまた、{template}のテンプレートに必ず沿った形で出力してください。"
+                # ping_prompt = f"{base_prompt}\n{tweet_text}\n{batch_text}"
+
+                # gemini_res = ping_to_gemini(ping_prompt)
 
                 # # feed_tocから関連情報を探してリプライ
                 # batch_text = ""
