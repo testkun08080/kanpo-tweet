@@ -10,8 +10,8 @@ import re
 
 import feedparser
 import tweepy
-from google import genai
-from google.genai import types
+# from google import genai
+# from google.genai import types
 
 
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -21,40 +21,40 @@ MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
 RSS_VIEWER_URL = "https://testkun08080.github.io/kanpo-rss"
 
 
-def ping_to_gemini(prompt: str) -> str:
-    """Gemini API にプロンプトを送信し、応答を返す関数。
+# def ping_to_gemini(prompt: str) -> str:
+#     """Gemini API にプロンプトを送信し、応答を返す関数。
 
-    Google の Gemini モデル「gemini-2.5-flash」を使用して、
-    指定したプロンプトに基づくテキストを生成します。
-    APIキーは環境変数 `GEMINI_API_KEY` から取得します。
-    処理速度を優先するため "thinking" 機能は無効化しています。
+#     Google の Gemini モデル「gemini-2.5-flash」を使用して、
+#     指定したプロンプトに基づくテキストを生成します。
+#     APIキーは環境変数 `GEMINI_API_KEY` から取得します。
+#     処理速度を優先するため "thinking" 機能は無効化しています。
 
-    Args:
-        prompt (str): Gemini に送信するプロンプト（質問や指示文）。
+#     Args:
+#         prompt (str): Gemini に送信するプロンプト（質問や指示文）。
 
-    Returns:
-        str: Gemini から返ってきた応答テキスト。
+#     Returns:
+#         str: Gemini から返ってきた応答テキスト。
 
-    Raises:
-        EnvironmentError: 環境変数 `GEMINI_API_KEY` が設定されていない場合。
-        Exception: Gemini API リクエストが失敗した場合など。
-    """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise EnvironmentError("環境変数 GEMINI_API_KEY が設定されていません。")
+#     Raises:
+#         EnvironmentError: 環境変数 `GEMINI_API_KEY` が設定されていない場合。
+#         Exception: Gemini API リクエストが失敗した場合など。
+#     """
+#     api_key = os.environ.get("GEMINI_API_KEY")
+#     if not api_key:
+#         raise EnvironmentError("環境変数 GEMINI_API_KEY が設定されていません。")
 
-    try:
-        client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash-lite",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=0)  # thinking無効化
-            ),
-        )
-        return response.text
-    except Exception as e:
-        return f"エラーが発生しました: {str(e)}"
+#     try:
+#         client = genai.Client(api_key=api_key)
+#         response = client.models.generate_content(
+#             model="gemini-2.5-flash-lite",
+#             contents=prompt,
+#             config=types.GenerateContentConfig(
+#                 thinking_config=types.ThinkingConfig(thinking_budget=0)  # thinking無効化
+#             ),
+#         )
+#         return response.text
+#     except Exception as e:
+#         return f"エラーが発生しました: {str(e)}"
 
 
 def count_tweet_length(text: str) -> int:
