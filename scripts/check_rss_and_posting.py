@@ -19,7 +19,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(n
 TWEET_URL_LENGTH = 23
 MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
 RSS_VIEWER_URL = "https://testkun08080.github.io/kanpo-rss"
-
+DEBUG = os.getenv("DEBUG_CHECK", False)
 
 # def ping_to_gemini(prompt: str) -> str:
 #     """Gemini API にプロンプトを送信し、応答を返す関数。
@@ -57,6 +57,33 @@ RSS_VIEWER_URL = "https://testkun08080.github.io/kanpo-rss"
 #         return f"エラーが発生しました: {str(e)}"
 
 
+def clean_duplicate_tags(text):
+    """ポスト用のタグ重複を削除し、本文の改行は保持して整形する関数."""
+    # ハッシュタグ抽出（本文から除去するためのリスト）
+    tags = re.findall(r"#\S+", text)
+
+    # 重複削除（順序保持）
+    seen = set()
+    unique_tags = []
+    for tag in tags:
+        if tag not in seen:
+            seen.add(tag)
+            unique_tags.append(tag)
+
+    # 本文部分（タグは削除するが改行は保持）
+    lines = text.splitlines()
+    non_tag_lines = []
+    for line in lines:
+        cleaned_line = re.sub(r"#\S+", "", line)
+        non_tag_lines.append(cleaned_line)
+
+    # 本文そのまま結合（余計な改行整形はしない）
+    non_tag_text = "\n".join(non_tag_lines).rstrip()
+
+    # 本文 + タグ（本文最後に必ず1行空けてタグ）
+    return f"{non_tag_text}\n\n" + "\n".join(unique_tags)
+
+
 def count_tweet_length(text: str) -> int:
     """
     Twitterの文字数カウント仕様に準拠して、テキストの長さを返す。
@@ -92,7 +119,13 @@ def post_to_x(text, in_reply_to_tweet_id=None):
     """
 
     logging.info(f":-------------------Tweet内容:-------------------")
+
+    if in_reply_to_tweet_id:
+        text = clean_duplicate_tags(text)
     logging.info(text)
+
+    if DEBUG:
+        return 1
 
     # bearer_token = os.environ.get("BEARER_TOKEN")
     api_key = os.environ.get("X_API_KEY")
@@ -215,7 +248,11 @@ def main():
 
     # --- X (Twitter) posting ---
     base_tags = ["#官報", "#官報通知"]
-    required_env = ["X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET"]
+
+    if not DEBUG:
+        required_env = ["X_API_KEY", "X_API_SECRET", "X_ACCESS_TOKEN", "X_ACCESS_TOKEN_SECRET"]
+    else:
+        required_env = []
     if all(os.environ.get(env_key) for env_key in required_env):
         if updated:
             for entry in updated_entries:
@@ -227,35 +264,35 @@ def main():
                 if tweet_id is None:
                     continue
 
-                # # feed_tocから関連情報を探してリプライ(with gemini)
-                # batch_text = ""
-                # serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
-                # for toc_entry in serch_entries:
-                #     summary = toc_entry.get("summary", "")
-                #     categories = toc_entry.get("categories", [])
+                # feed_tocからタグを抽出
+                batch_text = f"{entry['title']}\n{entry['link']}\n\n"
+                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                for toc_entry in serch_entries:
+                    summary = toc_entry.get("summary", "")
+                    categories = toc_entry.get("categories", [])
 
-                #     if entry["title"] not in summary:
-                #         logging.info(f"{entry['title']} not in {summary}")
-                #         continue
+                    if entry["title"] not in summary:
+                        logging.info(f"{entry['title']} not in {summary}")
+                        continue
 
-                #     reply_title = toc_entry.get("title", "")
-                #     reply_link = toc_entry.get("link", "")
+                    entry_text = ""
+                    if categories:
+                        categories_tags = " ".join([f"#{cat}" for cat in categories])
+                        entry_text = f"{categories_tags}\n"
+                    else:
+                        continue
 
-                #     if categories:
-                #         categories_tags = " ".join([f"#{cat}" for cat in categories])
-                #         entry_text = f"✐{reply_title}\n{reply_link}\n{categories_tags}\n\n"
-                #     else:
-                #         entry_text = f"✐{reply_title}\n{reply_link}\n\n"
+                    # このentryを追加したら文字数制限を超えるか？
+                    if count_tweet_length(batch_text + entry_text) > MAX_TWEET_LENGTH:
+                        post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+                        time.sleep(1)
+                        batch_text = entry_text
+                    else:
+                        batch_text += entry_text
 
-                #     batch_text += entry_text
-
-                # print("batch_text", batch_text)
-
-                # template = "簡潔なまとめ\n\nタグ"
-                # base_prompt = f"以下のものは、官報のリンクとタグをまとめたものです。\nこれをツイートに治るように159文字以内で、tweet用に簡潔にまとめてください。\nまた、{template}のテンプレートに必ず沿った形で出力してください。"
-                # ping_prompt = f"{base_prompt}\n{tweet_text}\n{batch_text}"
-
-                # gemini_res = ping_to_gemini(ping_prompt)
+                # 最後に残っていたら投稿
+                if batch_text:
+                    post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
 
                 # # feed_tocから関連情報を探してリプライ
                 # batch_text = ""
