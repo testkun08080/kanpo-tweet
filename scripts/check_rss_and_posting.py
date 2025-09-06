@@ -18,7 +18,7 @@ logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(n
 
 TWEET_URL_LENGTH = 23
 MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
-RSS_VIEWER_URL = "https://testkun08080.github.io/kanpo-rss"
+RSS_VIEWER_URL = "https://kanpo-viewer.com"
 DEBUG = os.getenv("DEBUG_CHECK", "0").lower() in ("1", "true", "yes")
 
 # def ping_to_gemini(prompt: str) -> str:
