@@ -10,6 +10,7 @@ import re
 
 import feedparser
 import tweepy
+from twitter_text import parse_tweet
 # from google import genai
 # from google.genai import types
 
@@ -17,7 +18,7 @@ import tweepy
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
 
 TWEET_URL_LENGTH = 23
-MAX_TWEET_LENGTH = 159  # X（旧Twitter）のツイートの最大文字数
+MAX_TWEET_LENGTH = 25000  # X（旧Twitter）のツイートの最大文字数
 RSS_VIEWER_URL = "https://kanpo-viewer.com"
 DEBUG = os.getenv("DEBUG_CHECK", "0").lower() in ("1", "true", "yes")
 
@@ -87,7 +88,6 @@ def clean_duplicate_tags(text):
 def count_tweet_length(text: str) -> int:
     """
     Twitterの文字数カウント仕様に準拠して、テキストの長さを返す。
-    URLはすべて23文字としてカウントする。
 
     Args:
         text (str): ツイートテキスト
@@ -95,13 +95,9 @@ def count_tweet_length(text: str) -> int:
     Returns:
         Optional[int]: 投稿されたツイートのID。失敗した場合はNone。
     """
-    # URLを見つけてその部分を23文字に換算
-    url_regex = re.compile(r"https?://\S+")
-    adjusted_text = text
-    for url_match in url_regex.finditer(text):
-        url = url_match.group(0)
-        adjusted_text = adjusted_text.replace(url, "X" * TWEET_URL_LENGTH, 1)
-    return len(adjusted_text)
+    res = parse_tweet(text)
+    text_weight = res.weightedLength
+    return text_weight
 
 
 def post_to_x(text, in_reply_to_tweet_id=None):
@@ -120,8 +116,8 @@ def post_to_x(text, in_reply_to_tweet_id=None):
 
     logging.info(f":-------------------Tweet内容:-------------------")
 
-    if in_reply_to_tweet_id:
-        text = clean_duplicate_tags(text)
+    # if in_reply_to_tweet_id:
+    #     text = clean_duplicate_tags(text)
     logging.info(text)
 
     if DEBUG:
@@ -222,7 +218,7 @@ def main():
             updated_entries.append({
                 "title": entry.get("title", ""),
                 "link": entry.get("link", ""),
-                "summary": entry.get("summary", ""),
+                "description": entry.get("description", ""),
                 "pubDate": pub_dt.strftime("%Y-%m-%d %H:%M:%S, GMT"),
             })
 
@@ -239,7 +235,7 @@ def main():
             updated_toc_entries.append({
                 "title": entry.get("title", ""),
                 "link": entry.get("link", ""),
-                "summary": entry.get("summary", ""),
+                "description": entry.get("description", ""),
                 "pubDate": pub_dt.strftime("%Y-%m-%d %H:%M:%S, GMT"),
                 "categories": [tag["term"] for tag in entry.get("tags", [])],
             })
@@ -254,37 +250,43 @@ def main():
     else:
         required_env = []
     if all(os.environ.get(env_key) for env_key in required_env):
+        extra = "👇各項目のリンクなどは以下項目ごとのリンクをご覧ください"
+        end_msg = f"👇以下RSSビューワーwebで項目ごとで見ることも可能です\n{RSS_VIEWER_URL}"
         if updated:
             for entry in updated_entries:
                 # ツイート内容を作成
-                # extra = "各項目のリンクなどは以下リプライをご覧ください.."
-                extra = f"以下RSSビューワーwebで項目ごとで見ることも可能です。。。\n{RSS_VIEWER_URL}"
-                tweet_text = f"📚{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}\n\n{extra}"
-                tweet_id = post_to_x(tweet_text)
-                if tweet_id is None:
-                    continue
 
-                # feed_tocからタグを抽出
-                batch_text = f"{entry['title']}\n{entry['link']}\n\n"
-                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
+                tweet_text = f"📚{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}\n\n{extra}"
+                # tweet_text = f"📚{entry['title']}\n{entry['link']}\n\n{' '.join(base_tags)}"
+                # tweet_id = post_to_x(tweet_text)
+                # if tweet_id is None:
+                #     continue
+
+                # feed_tocからタグを抽出してツイート文章作成
+                batch_text = f"{tweet_text}\n\n"
+                serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("description", "")]
                 for toc_entry in serch_entries:
-                    summary = toc_entry.get("summary", "")
+                    toc_title = toc_entry.get("title", "")
+                    pdf_link = toc_entry.get("link", "")
+                    description = toc_entry.get("description", "")
                     categories = toc_entry.get("categories", [])
 
-                    if entry["title"] not in summary:
-                        logging.info(f"{entry['title']} not in {summary}")
+                    if entry["title"] not in description:
+                        logging.info(f"{entry['title']} not in {description}")
                         continue
 
                     entry_text = ""
                     if categories:
                         categories_tags = " ".join([f"#{cat}" for cat in categories])
-                        entry_text = f"{categories_tags}\n"
+                        entry_text = f"{toc_title}\n{pdf_link}\n{categories_tags}\n\n"
                     else:
                         continue
 
                     # このentryを追加したら文字数制限を超えるか？
-                    if count_tweet_length(batch_text + entry_text) > MAX_TWEET_LENGTH:
-                        post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+                    if count_tweet_length(batch_text + entry_text + end_msg) > MAX_TWEET_LENGTH:
+                        logging.info("ポストしちゃう")
+                        batch_text = entry_text + end_msg
+                        post_to_x(batch_text.strip())
                         time.sleep(1)
                         batch_text = entry_text
                     else:
@@ -292,41 +294,10 @@ def main():
 
                 # 最後に残っていたら投稿
                 if batch_text:
-                    post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
+                    batch_text += end_msg
+                    logging.warning("残りをポスト")
+                    post_to_x(batch_text.strip())
 
-                # # feed_tocから関連情報を探してリプライ
-                # batch_text = ""
-                # serch_entries = [e for e in updated_toc_entries if entry["title"] in e.get("summary", "")]
-                # for toc_entry in serch_entries:
-                #     summary = toc_entry.get("summary", "")
-                #     categories = toc_entry.get("categories", [])
-
-                #     if entry["title"] not in summary:
-                #         logging.info(f"{entry['title']} not in {summary}")
-                #         continue
-
-                #     reply_title = toc_entry.get("title", "")
-                #     reply_link = toc_entry.get("link", "")
-
-                #     if categories:
-                #         categories_tags = " ".join([f"#{cat}" for cat in categories])
-                #         entry_text = f"✐{reply_title}\n{reply_link}\n{categories_tags}\n\n"
-                #     else:
-                #         entry_text = f"✐{reply_title}\n{reply_link}\n\n"
-
-                #     # このentryを追加したら文字数制限を超えるか？
-                #     if count_tweet_length(batch_text + entry_text) > MAX_TWEET_LENGTH:
-                #         post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
-                #         time.sleep(1)
-                #         batch_text = entry_text
-                #     else:
-                #         batch_text += entry_text
-
-                # # 最後に残っていたら投稿
-                # if batch_text:
-                #     post_to_x(batch_text.strip(), in_reply_to_tweet_id=tweet_id)
-
-                # リプライの間隔を空ける
                 time.sleep(2)
         else:
             logging.warning("RSSフィードのアップデートが見つかりません.")
