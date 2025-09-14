@@ -6,11 +6,11 @@ on:
       rss_url:
         description: "RSSフィードのURL"
         required: true
-        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml"
+        default: "https://kanpo-viewer.com/feed.xml"
       rss_toc_url:
         description: "RSS_詳細版フィードのURL"
         required: true
-        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml"
+        default: "https://kanpo-viewer.com/feed_toc.xml"
       minutes:
         description: "何分以内に更新されたアイテムを投稿するか"
         required: true
@@ -18,7 +18,6 @@ on:
 
   schedule:
     - cron: "30 23 * * 0-4" # 月曜〜金曜の JST 8:30 (遅延を考慮して 30分に設定)だいたい10分遅延する
-
 
 jobs:
   check_rss_and_post_feeds:
@@ -40,13 +39,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install feedparser tweepy
+        run: pip install feedparser tweepy twitter-text-parser setuptools
 
       - name: Check RSS and Post feed to X
         id: check_and_post
         env:
-          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
-          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml' }}
+          RSS_URL: ${{ inputs.rss_url || 'https://kanpo-viewer.com/feed.xml' }}
+          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://kanpo-viewer.com/feed_toc.xml' }}
           MINUTES: ${{ inputs.minutes || '720' }}
         run: |
           echo "▶️ RSS_URL: $RSS_URL"
@@ -59,7 +58,7 @@ jobs:
           echo "✅ updated: ${{ steps.check_and_post.outputs.updated }}"
           echo "📝 entries:"
           echo '${{ steps.check_and_post.outputs.entries }}'
-  
+
   re_check_rss_and_post_feeds:
     needs: check_rss_and_post_feeds
     if: needs.check_rss_and_post_feeds.outputs.updated == 'false'
@@ -81,13 +80,13 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install feedparser tweepy
+        run: pip install feedparser tweepy twitter-text-parser setuptools
 
       - name: Check RSS and Post feed to X
         id: check_and_post
         env:
-          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
-          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml' }}
+          RSS_URL: ${{ inputs.rss_url || 'https://kanpo-viewer.com/feed.xml' }}
+          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://kanpo-viewer.com/feed_toc.xml' }}
           MINUTES: ${{ inputs.minutes || '720' }}
         run: |
           echo "▶️ RSS_URL: $RSS_URL"
@@ -100,7 +99,7 @@ jobs:
           echo "✅ updated: ${{ steps.check_and_post.outputs.updated }}"
           echo "📝 entries:"
           echo '${{ steps.check_and_post.outputs.entries }}'
-          
+
   twitter-non-post:
     needs: re_check_rss_and_post_feeds
     if: needs.re_check_rss_and_post_feeds.outputs.updated == 'false'

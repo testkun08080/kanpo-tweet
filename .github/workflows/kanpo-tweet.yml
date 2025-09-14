@@ -6,7 +6,7 @@ on:
       rss_url:
         description: "RSSフィードのURL"
         required: true
-        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml"
+        default: "https://kanpo-viewer.com/feed.xml"
       minutes:
         description: "何分以内に更新されたアイテムを投稿するか"
         required: true
@@ -35,7 +35,7 @@ jobs:
       - name: Check RSS Update
         id: check
         env:
-          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
+          RSS_URL: ${{ inputs.rss_url || 'https://kanpo-viewer.com/feed.xml' }}
           MINUTES: ${{ inputs.minutes || '720' }}
         run: |
           echo "▶️ RSS_URL: $RSS_URL"
@@ -55,7 +55,7 @@ jobs:
     steps:
       - uses: azu/rss-to-twitter@v2
         with:
-          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
+          RSS_URL: ${{ inputs.rss_url || 'https://kanpo-viewer.com/feed.xml' }}
           TWEET_TEMPLATE: "%desc%"
           UPDATE_WITHIN_MINUTES: ${{ inputs.minutes || '720' }}
           TWITTER_APIKEY: ${{ secrets.TWITTER_APIKEY }}
@@ -87,7 +87,7 @@ jobs:
       - name: Retry Check RSS Update
         id: check
         env:
-          RSS_URL: ${{ inputs.rss_url || 'https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml' }}
+          RSS_URL: ${{ inputs.rss_url || 'https://kanpo-viewer.com/feed.xml' }}
           MINUTES: ${{ inputs.minutes || '720' }}
         run: |
           echo "▶️ RSS_URL: $RSS_URL"

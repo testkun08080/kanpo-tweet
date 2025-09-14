@@ -10,23 +10,17 @@
 
 ## ローカルテスト用
 ```zsh
-RSS_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml'
 MINUTES="720"
-uv run scripts/check_rss.py "$RSS_URL" "$MINUTES"
-```
-
-```zsh
 X_API_KEY="api-key"
 X_API_SECRET="api-secret"
 X_ACCESS_TOKEN="access-token"
 X_ACCESS_TOKEN_SECRET="access-token-secret"
-RSS_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml'
-RSS_TOC_URL='https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml'
-
-#GEMINI_API_KEY='gemni_api_key'
+RSS_URL='https://kanpo-viewer.com/feed.xml'
+RSS_TOC_URL='https://kanpo-viewer.com/feed_toc.xml'
+# DEBUG_CHECK='1'
 
 # 720分以内のフィードをチェック
-uv run scripts/check_rss_and_posting.py "$RSS_URL" "$RSS_TOC_URL" 720
+uv run scripts/check_rss_and_posting.py "$RSS_URL" "$RSS_TOC_URL" "$MINUTES"
 ```
 
 ## 💬 補足
