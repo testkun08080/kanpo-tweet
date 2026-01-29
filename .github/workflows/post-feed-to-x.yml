@@ -6,16 +6,15 @@ on:
       rss_url:
         description: "RSSフィードのURL"
         required: true
-        default: "https://kanpo-viewer.com/feed.xml"
+        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed.xml"
       rss_toc_url:
         description: "RSS_詳細版フィードのURL"
         required: true
-        default: "https://kanpo-viewer.com/feed_toc.xml"
+        default: "https://raw.githubusercontent.com/testkun08080/kanpo-rss/refs/heads/main/feed_toc.xml"
       minutes:
         description: "何分以内に更新されたアイテムを投稿するか"
         required: true
         default: "720" # 12時間
-
   schedule:
     - cron: "33 23 * * 0-4" # 月曜〜金曜の JST 8:30 (遅延を考慮して 30分に設定)だいたい10分遅延する
 
