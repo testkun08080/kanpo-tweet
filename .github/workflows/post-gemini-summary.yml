@@ -1,0 +1,57 @@
+# 詳細版RSSから当日分を取得し、Geminiで要約してXに投稿する
+name: Post Gemini Summary (官報 要約投稿)
+
+on:
+  workflow_dispatch:
+    inputs:
+      rss_toc_url:
+        description: "RSS 詳細版フィードのURL"
+        required: true
+        default: "https://kanpo-viewer.com/feed_toc.xml"
+      date:
+        description: "対象日 (YYYY-MM-DD、省略時は当日)"
+        required: false
+
+  # schedule:
+  #   # 月曜〜金曜 JST 9:00 頃（0:00 UTC）
+  #   - cron: "0 0 * * 1-5"
+
+jobs:
+  gemini_summary_and_post:
+    runs-on: ubuntu-latest
+    env:
+      X_API_KEY: ${{ secrets.TWITTER_APIKEY }}
+      X_API_SECRET: ${{ secrets.TWITTER_APIKEY_SECRET }}
+      X_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+      X_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install feedparser tweepy "google-genai"
+
+      - name: Fetch today's RSS (詳細版) and post summary to X
+        id: post
+        env:
+          RSS_TOC_URL: ${{ inputs.rss_toc_url || 'https://kanpo-viewer.com/feed_toc.xml' }}
+          TARGET_DATE: ${{ inputs.date }}
+        run: |
+          echo "▶️ RSS_TOC_URL: $RSS_TOC_URL"
+          if [ -n "$TARGET_DATE" ]; then
+            python scripts/check_rss_gemini_and_posting.py "$RSS_TOC_URL" "$TARGET_DATE"
+          else
+            python scripts/check_rss_gemini_and_posting.py "$RSS_TOC_URL"
+          fi
+
+      - name: Show Results
+        if: always()
+        run: |
+          echo "✅ 要約投稿ジョブが完了しました"
