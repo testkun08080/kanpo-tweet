@@ -21,7 +21,7 @@ logging.basicConfig(
 
 JST = ZoneInfo("Asia/Tokyo")
 RSS_VIEWER_URL = "https://kanpo-viewer.com"
-MAX_TWEET_LENGTH = 280  # 要約ツイート用
+MAX_TWEET_LENGTH = 25000  # 要約ツイート用
 DEBUG = os.getenv("DEBUG_GEMINI_POST", "0").lower() in ("1", "true", "yes")
 
 
@@ -76,7 +76,7 @@ def summarize_with_gemini(entries: List[dict]) -> str:
 X（Twitter）に投稿するための短い要約を日本語で作成してください。
 
 条件:
-- 280文字以内に収めてください。
+- 25000文字以内に収めてください。
 - 最後に「#官報 #官報通知」を付けてください。
 - 日付や重要な項目名は残してください。箇条書きや改行は自由です。
 
@@ -129,7 +129,8 @@ X（Twitter）に投稿するための短い要約を日本語で作成してく
 
 def post_to_x(text: str) -> Optional[str]:
     """テキストをXに投稿する。成功時はツイートID、失敗時はNone。"""
-    logging.info("Tweet内容: %s", text[:200] + "..." if len(text) > 200 else text)
+    logging.info(f"Tweet内容: {text}")
+    # logging.info("Tweet内容: %s", text[:200] + "..." if len(text) > 200 else text)
 
     if DEBUG:
         logging.info("DEBUG のため投稿をスキップしました")
@@ -186,8 +187,8 @@ def main() -> None:
         return
 
     summary = summarize_with_gemini(entries)
-    if len(summary) > MAX_TWEET_LENGTH:
-        summary = summary[: MAX_TWEET_LENGTH - 3] + "..."
+    # if len(summary) > MAX_TWEET_LENGTH:
+    #     summary = summary[: MAX_TWEET_LENGTH - 3] + "..."
 
     tweet_id = post_to_x(summary)
 
