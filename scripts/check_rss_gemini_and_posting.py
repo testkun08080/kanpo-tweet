@@ -89,9 +89,9 @@ X（Twitter）に投稿するための短い要約を日本語で作成してく
 上記の条件を満たす投稿文のみを出力してください。"""
 
     client = genai.Client(api_key=api_key)
-    model = (os.environ.get("GEMINI_MODEL") or "gemini-2.0-flash").strip()
+    model = (os.environ.get("GEMINI_MODEL") or "gemini-2.5-flash-lite").strip()
     if not model or model == "{model}":
-        model = "gemini-2.0-flash"
+        model = "gemini-2.5-flash-lite"
     max_retries = 3
     last_error = None
 
