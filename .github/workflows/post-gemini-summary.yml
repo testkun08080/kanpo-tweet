@@ -12,9 +12,9 @@ on:
         description: "対象日 (YYYY-MM-DD、省略時は当日)"
         required: false
 
-  # schedule:
-  #   # 月曜〜金曜 JST 9:00 頃（0:00 UTC）
-  #   - cron: "0 0 * * 1-5"
+  schedule:
+    # 月曜〜金曜 JST 19:30 頃
+    - cron: "30 10 * * 1-5"
 
 jobs:
   gemini_summary_and_post:
